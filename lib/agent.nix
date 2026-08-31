@@ -23,11 +23,13 @@
 , persona ? ""                        # explicit persona; "" -> harness uses the bot's Discourse bio
 , personaFromBio ? true               # when persona is "", derive it from the bot account's About Me
 , agentCommand ? "claude-agent-acp"   # ACP agent runtime (goose / codex-acp also work)
+, agentArgs ? [ ]                     # args for the ACP agent (e.g. [ "acp" ] for omp/goose)
 , memory ? 2048                       # MiB (container --memory)
 , cpus ? 2
 , image ? "discourse-acp:latest"
 , discourseAcpDir ? "../../discourse-acp"  # harness repo (for build-image)
 , discourseMcpDir ? "../../discourse-mcp"  # our discourse-mcp fork (for build-image)
+, overlay ? false                     # build/run a per-agent image overlay (this dir's Dockerfile)
 }:
 
 let
@@ -43,6 +45,16 @@ let
   sandboxName = if name == "" then username else name;
   ownersCsv = lib.concatStringsSep "," owners;
   allowlistCsv = lib.concatStringsSep "," allowlist;
+  agentArgsCsv = lib.concatStringsSep "," agentArgs;
+  # A per-agent overlay image (this agent's Dockerfile FROM the shared base) so
+  # the shared image stays agent-agnostic and agent-specific runtimes live here.
+  agentImage = "${sandboxName}-agent:latest";
+  runImage = if overlay then agentImage else image;
+  overlayBuild = lib.optionalString overlay ''
+    [ -f "$PWD/Dockerfile" ] || { echo "overlay = true but no Dockerfile in $PWD" >&2; exit 1; }
+    echo ">> docker build ${agentImage} (overlay: $PWD on ${image})"
+    docker build --build-arg BASE=${image} -t ${agentImage} "$PWD"
+  '';
 
   needDocker = ''command -v docker >/dev/null 2>&1 || { echo "error: 'docker' not on PATH — add colima+docker to nix-darwin and run 'colima start'" >&2; exit 1; }'';
 
@@ -56,7 +68,8 @@ let
       [ -f "$mcpsrc/pyproject.toml" ] || { echo "no discourse-mcp at '$mcpsrc' (set DISCOURSE_MCP_DIR)" >&2; exit 1; }
       ${needDocker}
       echo ">> docker build ${image} (context: $src, mcp: $mcpsrc)"
-      exec docker build -t ${image} --build-context mcp="$mcpsrc" "$src"
+      docker build -t ${image} --build-context mcp="$mcpsrc" "$src"
+      ${overlayBuild}
     '';
   };
 
@@ -82,11 +95,12 @@ let
         -e DISCOURSE_ACP_RESPOND_TO_ALLOWLIST=${lib.escapeShellArg allowlistCsv} \
         -e DISCOURSE_ACP_AGENTS=${toString agents} \
         -e DISCOURSE_ACP_AGENT_COMMAND=${lib.escapeShellArg agentCommand} \
+        -e DISCOURSE_ACP_AGENT_ARGS=${lib.escapeShellArg agentArgsCsv} \
         -e DISCOURSE_ACP_SYSTEM_PROMPT=${lib.escapeShellArg persona} \
         -e DISCOURSE_ACP_PERSONA_FROM_BIO=${if personaFromBio then "true" else "false"} \
         -e PYTHONUNBUFFERED=1 \
         -e DISCOURSE_API_KEY -e CLAUDE_CODE_OAUTH_TOKEN \
-        ${image}
+        ${runImage}
       echo "started '${sandboxName}'. logs: nix run .#logs   ·   stop: nix run .#down"
     '';
   };
