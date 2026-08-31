@@ -68,7 +68,7 @@ let
       docker rm -f ${sandboxName} >/dev/null 2>&1 || true
       # secretspec resolves the declared secrets into the environment; docker
       # forwards them BY NAME (-e VAR with no value), so values never hit argv.
-      secretspec run -- docker run -d --restart unless-stopped \
+      secretspec run --reason "boot the ${sandboxName} Discourse ACP agent" -- docker run -d --restart unless-stopped \
         --name ${sandboxName} \
         --memory ${toString memory}m --cpus ${toString cpus} \
         -v "$PWD/workspace:/workspace" \
