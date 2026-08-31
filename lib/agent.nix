@@ -81,6 +81,7 @@ let
         -e DISCOURSE_ACP_AGENT_COMMAND=${lib.escapeShellArg agentCommand} \
         -e DISCOURSE_ACP_SYSTEM_PROMPT=${lib.escapeShellArg persona} \
         -e DISCOURSE_ACP_PERSONA_FROM_BIO=${if personaFromBio then "true" else "false"} \
+        -e PYTHONUNBUFFERED=1 \
         -e DISCOURSE_API_KEY -e CLAUDE_CODE_OAUTH_TOKEN \
         ${image}
       echo "started '${sandboxName}'. logs: nix run .#logs   ·   stop: nix run .#down"
