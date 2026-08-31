@@ -59,7 +59,7 @@ let
 
   mkUp = pkgs: pkgs.writeShellApplication {
     name = "up";
-    runtimeInputs = [ pkgs.bash pkgs.coreutils ];
+    runtimeInputs = [ pkgs.bash pkgs.coreutils pkgs.secretspec ];
     text = ''
       # 1. Materialize the manifest for msb.
       printf '%s' ${lib.escapeShellArg sandboxfileText} > ./Sandboxfile
@@ -108,10 +108,10 @@ let
   };
 
   mkDevShell = pkgs: pkgs.mkShell {
-    packages = [ pkgs.jq ];
+    packages = [ pkgs.jq pkgs.secretspec ];
     shellHook = ''
       echo "agent '${sandboxName}' — @${username} on ${forumHost}"
-      echo "  external tools on PATH: docker (build), msb (microsandbox), secretspec"
+      echo "  external tools on PATH: docker (build), msb (microsandbox); secretspec is provided here"
       echo "  secrets: declared in secretspec.toml; set them with 'secretspec set <NAME>'"
       echo "  nix run .#build-image   ·   nix run .#up   ·   nix run .#logs   ·   nix run .#down"
     '';
