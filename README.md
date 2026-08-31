@@ -15,8 +15,9 @@ agent.
   agent's flake outputs (`nix run .#{up,down,logs,build-image}`, a dev shell,
   and `packages.sandboxfile`).
 - **A concrete agent** = a directory (see [`../agents/example`](../agents/example))
-  whose whole `flake.nix` is one `launch.lib.mkAgent { ... }` call, plus
-  `persona.md` and a `secretspec.toml`.
+  whose whole `flake.nix` is one `launch.lib.mkAgent { ... }` call, plus a
+  `secretspec.toml`. Its display name and persona come from the bot's Discourse
+  profile (account name + "About Me" bio), not from files here.
 - `nix run .#up` renders a `Sandboxfile` from the params and boots it with
   `secretspec run -- msb run …`. Inside the microVM the **discourse-acp image**
   runs the harness, which spawns the ACP agent (**claude**) and the
@@ -29,8 +30,8 @@ agent.
 
 ```sh
 cp -r agents/example agents/mybot
-$EDITOR agents/mybot/flake.nix          # name, forum, username, owners, persona
-$EDITOR agents/mybot/persona.md secretspec.toml
+$EDITOR agents/mybot/flake.nix          # forum URL, bot account, owner
+rm -rf agents/mybot/.git                # if copied; a fresh agent, not example's history
 ```
 
 ## Launch (from the agent's directory)
