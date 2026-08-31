@@ -1,5 +1,5 @@
 {
-  description = "discourse-acp-sandbox — shared Nix launcher: describe a Discourse ACP agent, run it in a microsandbox microVM";
+  description = "discourse-acp-sandbox — shared Nix launcher: describe a Discourse ACP agent, run it as a container (colima/docker)";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -17,8 +17,8 @@
       #     launch.lib.mkAgent { name = "honey"; discourseUrl = "..."; ... };
       #
       # mkAgent returns that agent's flake outputs, so `nix run .#up` in the
-      # agent's directory boots msb with the discourse-acp image (harness +
-      # claude + @discourse/mcp) and injects its secrets.
+      # agent's directory runs the discourse-acp image as a detached container
+      # (harness + claude + @discourse/mcp) and injects its secrets via secretspec.
       lib.mkAgent = import ./lib/agent.nix { inherit nixpkgs; };
 
       devShells = forAll (pkgs: {
