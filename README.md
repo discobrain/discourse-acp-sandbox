@@ -70,4 +70,3 @@ exfiltrate. Images run from msb's own cache, so no registry: `build-image` does
   own Discourse polling and discourse-mcp send the key in a header to the forum
   host, so this fits; if your msb build instead needs the literal value at rest,
   switch those two `--secret` flags to `--env` in `lib/agent.nix`.
-```
