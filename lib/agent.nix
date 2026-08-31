@@ -61,15 +61,17 @@ let
     name = "up";
     runtimeInputs = [ pkgs.bash pkgs.coreutils pkgs.secretspec ];
     text = ''
-      # 1. Materialize the manifest for msb.
-      printf '%s' ${lib.escapeShellArg sandboxfileText} > ./Sandboxfile
       command -v msb >/dev/null 2>&1 || { echo "error: 'msb' (microsandbox) not on PATH" >&2; exit 1; }
       command -v secretspec >/dev/null 2>&1 || { echo "error: 'secretspec' not on PATH (see secretspec.toml)" >&2; exit 1; }
-      # 2. Boot the microVM under secretspec, which resolves the declared secrets
-      #    (secretspec.toml) from your provider and puts them in the environment;
-      #    msb then injects each as a host-scoped --secret. No secret in Nix/disk.
+      # Boot the microVM under secretspec: it resolves the declared secrets from
+      # your provider into the env, and msb injects each host-scoped via --secret.
+      # The image (loaded by build-image) runs its default command: discourse-acp run.
+      # NOTE: `msb run <NAME>` treats <NAME> as an IMAGE; the sandbox name is --name,
+      # and --pull never keeps msb on the locally-loaded image (no Docker Hub).
       echo ">> booting '${sandboxName}' as @${username} (forum ${forumHost})"
-      exec secretspec run -- msb run ${sandboxName} \
+      exec secretspec run -- msb run \
+        --name ${sandboxName} --replace --pull never \
+        --memory ${toString memory}M --cpus ${toString cpus} \
         --env DISCOURSE_URL=${lib.escapeShellArg discourseUrl} \
         --env DISCOURSE_API_USERNAME=${lib.escapeShellArg username} \
         --env DISCOURSE_ACP_AGENT_OWNER=${lib.escapeShellArg ownersCsv} \
@@ -80,7 +82,8 @@ let
         --env DISCOURSE_ACP_SYSTEM_PROMPT=${lib.escapeShellArg persona} \
         --env DISCOURSE_ACP_PERSONA_FROM_BIO=${if personaFromBio then "true" else "false"} \
         --secret DISCOURSE_API_KEY@${forumHost} \
-        --secret CLAUDE_CODE_OAUTH_TOKEN@${providerHost}
+        --secret CLAUDE_CODE_OAUTH_TOKEN@${providerHost} \
+        ${image}
     '';
   };
 
