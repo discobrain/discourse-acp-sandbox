@@ -21,7 +21,7 @@ agent.
 - `nix run .#up` renders a `Sandboxfile` from the params and boots it with
   `secretspec run -- msb run …`. Inside the microVM the **discourse-acp image**
   runs the harness, which spawns the ACP agent (**claude**) and the
-  **@discourse/mcp** server.
+  **discourse-mcp** server (our Python fork).
 - **Secrets never touch Nix or git.** They are declared in `secretspec.toml` and
   resolved at launch from your secretspec provider (system keyring by default),
   then injected by msb scoped to the exact host allowed to use them.
@@ -67,7 +67,7 @@ exfiltrate. Images run from msb's own cache, so no registry: `build-image` does
   `msb run` line in [`lib/agent.nix`](./lib/agent.nix).
 - **Secret model:** msb's host-scoped secrets are designed to never enter the VM
   (substituted into outbound requests to the allowed host). Both the harness's
-  own Discourse polling and @discourse/mcp send the key in a header to the forum
+  own Discourse polling and discourse-mcp send the key in a header to the forum
   host, so this fits; if your msb build instead needs the literal value at rest,
   switch those two `--secret` flags to `--env` in `lib/agent.nix`.
 ```

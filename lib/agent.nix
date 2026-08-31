@@ -4,7 +4,7 @@
 #
 # `nix run .#up` starts the agent as a detached, auto-restarting container: the
 # discourse-acp image runs the harness, which spawns the ACP agent (claude) and
-# the @discourse/mcp server. Non-secret identity is baked here; secrets are
+# the discourse-mcp server. Non-secret identity is baked here; secrets are
 # resolved at launch by secretspec and passed BY NAME (never in Nix or argv).
 # The same image runs later in Kubernetes.
 #
@@ -27,6 +27,7 @@
 , cpus ? 2
 , image ? "discourse-acp:latest"
 , discourseAcpDir ? "../../discourse-acp"  # harness repo (for build-image)
+, discourseMcpDir ? "../../discourse-mcp"  # our discourse-mcp fork (for build-image)
 }:
 
 let
@@ -50,10 +51,12 @@ let
     runtimeInputs = [ pkgs.bash pkgs.coreutils ];
     text = ''
       src="''${DISCOURSE_ACP_DIR:-${discourseAcpDir}}"
+      mcpsrc="''${DISCOURSE_MCP_DIR:-${discourseMcpDir}}"
       [ -f "$src/Dockerfile" ] || { echo "no Dockerfile at '$src' (set DISCOURSE_ACP_DIR)" >&2; exit 1; }
+      [ -f "$mcpsrc/pyproject.toml" ] || { echo "no discourse-mcp at '$mcpsrc' (set DISCOURSE_MCP_DIR)" >&2; exit 1; }
       ${needDocker}
-      echo ">> docker build ${image} (context: $src)"
-      exec docker build -t ${image} "$src"
+      echo ">> docker build ${image} (context: $src, mcp: $mcpsrc)"
+      exec docker build -t ${image} --build-context mcp="$mcpsrc" "$src"
     '';
   };
 

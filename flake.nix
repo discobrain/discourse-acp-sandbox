@@ -18,7 +18,7 @@
       #
       # mkAgent returns that agent's flake outputs, so `nix run .#up` in the
       # agent's directory runs the discourse-acp image as a detached container
-      # (harness + claude + @discourse/mcp) and injects its secrets via secretspec.
+      # (harness + claude + discourse-mcp) and injects its secrets via secretspec.
       lib.mkAgent = import ./lib/agent.nix { inherit nixpkgs; };
 
       devShells = forAll (pkgs: {
